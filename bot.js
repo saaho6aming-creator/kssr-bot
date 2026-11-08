@@ -1,11 +1,11 @@
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const express = require('express');
-
-// Keep Render alive
 const app = express();
-app.get('/', (req, res) => res.send('🤖 KSSR BOT is Running!'));
-app.listen(process.env.PORT || 3000, () => console.log('Server running'));
+const PORT = process.env.PORT || 3000;
+
+app.get('/', (req, res) => res.send('Bot is running!'));
+app.listen(PORT, () => console.log('Server running on ' + PORT));
 
 const client = new Client({
     authStrategy: new LocalAuth(),
@@ -30,25 +30,12 @@ client.on('qr', (qr) => {
 });
 
 client.on('ready', () => {
-    console.log('🤖 KSSR BOT is Ready!');
+    console.log('Bot is READY!');
 });
 
 client.on('message', async (msg) => {
-    const text = msg.body.toLowerCase().trim();
-    const chat = await msg.getChat();
-
-    // Only reply in groups or DM
-    if (text === 'hi' || text === 'hello' || text === 'hey') {
-        msg.reply('Hello! 👋 I am 🤖 *KSSR BOT*\nHow can I help you?');
-    }
-    else if (text === 'help' || text === 'menu') {
-        msg.reply('🤖 *KSSR BOT MENU*\n\nType:\n*hi* - Say Hello\n*help* - Show Menu\n*ping* - Check Bot\n*owner* - Owner Info');
-    }
-    else if (text === 'ping') {
-        msg.reply('Pong! 🏓 Bot is Online 24/7');
-    }
-    else if (text === 'owner') {
-        msg.reply('👑 Owner: KSSR\n📍 Butwal, Nepal');
+    if (msg.body.toLowerCase() === 'hi') {
+        msg.reply('Hello! Bot is working ✅');
     }
 });
 
