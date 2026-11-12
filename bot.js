@@ -1,14 +1,42 @@
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
 const express = require('express');
+const fs = require('fs');
+const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 let lastQR = '';
 
+// AUTO-FIND CHROME - This fixes "Could not find Chrome" forever
+function findChrome() {
+  const bases = [
+    '/opt/render/.cache/puppeteer',
+    path.join(__dirname, '.cache', 'puppeteer'),
+    path.join(process.cwd(), '.cache', 'puppeteer'),
+    '/root/.cache/puppeteer'
+  ];
+  for (const base of bases) {
+    try {
+      const chromeDir = path.join(base, 'chrome');
+      if (!fs.existsSync(chromeDir)) continue;
+      const versions = fs.readdirSync(chromeDir);
+      for (const v of versions) {
+        const p1 = path.join(chromeDir, v, 'chrome-linux', 'chrome');
+        const p2 = path.join(chromeDir, v, 'chrome-linux64', 'chrome');
+        if (fs.existsSync(p1)) return p1;
+        if (fs.existsSync(p2)) return p2;
+      }
+    } catch (e) {}
+  }
+  return undefined;
+}
+const chromePath = findChrome();
+console.log('Chrome found at:', chromePath || 'NOT FOUND - will use default');
+
 app.get('/', (req, res) => {
   if (!lastQR) {
-    return res.send('<h2>Bot is starting... wait 30 sec and refresh</h2>');
+    return res.send('<h2>Bot is starting... wait 30 sec and refresh</h2><p>Chrome: ' + (chromePath || 'searching...') + '</p>');
   }
   qrcode.toDataURL(lastQR, (err, url) => {
     if (err) return res.send('QR Error');
@@ -24,6 +52,7 @@ const client = new Client({
   }),
   puppeteer: {
     headless: true,
+    executablePath: chromePath,
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
@@ -33,29 +62,7 @@ const client = new Client({
       '--no-zygote',
       '--single-process',
       '--disable-extensions',
-      '--disable-gpu',
-      '--disable-background-networking',
-      '--disable-background-timer-throttling',
-      '--disable-breakpad',
-      '--disable-client-side-phishing-detection',
-      '--disable-component-update',
-      '--disable-default-apps',
-      '--disable-domain-reliability',
-      '--disable-features=AudioServiceOutOfProcess',
-      '--disable-hang-monitor',
-      '--disable-ipc-flooding-protection',
-      '--disable-notifications',
-      '--disable-offer-store-unmasked-wallet-cards',
-      '--disable-popup-blocking',
-      '--disable-print-preview',
-      '--disable-prompt-on-repost',
-      '--disable-renderer-backgrounding',
-      '--disable-sync',
-      '--disable-translate',
-      '--metrics-recording-only',
-      '--mute-audio',
-      '--no-default-browser-check',
-      '--safebrowsing-disable-auto-update'
+      '--disable-gpu'
     ]
   }
 });
@@ -85,21 +92,13 @@ client.on('disconnected', (reason) => {
 client.on('message', async (msg) => {
   try {
     if (msg.fromMe) return;
-
     const body = msg.body.trim().toLowerCase();
     console.log('Message received:', body, 'from:', msg.from);
-
     if (body === '!ping') {
       await msg.reply('🏓 Pong! Bot is ONLINE ✅');
     }
     if (body === '!help' || body === '!menu') {
-      await msg.reply(
-        `🤖 *KSSR CUP BOT*\n\n` +
-        `!ping - Check bot online\n` +
-        `!help - Show this menu\n` +
-        `!menu - Show this menu\n` +
-        `!rules - Group rules`
-      );
+      await msg.reply(`🤖 *KSSR CUP BOT*\n\n!ping - Check bot online\n!help - Show this menu\n!menu - Show this menu\n!rules - Group rules`);
     }
     if (body === '!rules') {
       await msg.reply('📋 *KSSR CUP Rules*\n1. Respect everyone\n2. No spam\n3. Enjoy the game ⚽');
