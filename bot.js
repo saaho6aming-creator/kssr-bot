@@ -33,11 +33,6 @@ const client = new Client({
       '--no-zygote',
       '--disable-gpu'
     ]
-  },
-  // This fixes Client.inject crash on new WhatsApp
-  webVersionCache: {
-    type: 'remote',
-    remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html'
   }
 });
 
@@ -65,7 +60,6 @@ client.on('disconnected', (reason) => {
 
 client.on('message', async (msg) => {
   try {
-    // Ignore bot's own messages
     if (msg.fromMe) return;
 
     const body = msg.body.trim().toLowerCase();
