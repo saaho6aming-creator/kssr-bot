@@ -12,7 +12,7 @@ async function startBot() {
 
   // If not logged in, ask for pairing code
   if (!sock.authState.creds.registered) {
-    const number = '97798XXXXXXXX'; // <-- PUT BOT NUMBER HERE without + , example 9779800000000
+    const number = '9779748710002'; // <-- PUT BOT NUMBER HERE without + , example 9779800000000
     setTimeout(async () => {
       try {
         pairingCode = await sock.requestPairingCode(number);
