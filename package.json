@@ -6,6 +6,7 @@
   "dependencies": {
     "@whiskeysockets/baileys": "latest",
     "express": "latest",
-    "pino": "latest"
+    "pino": "latest",
+    "qrcode": "latest"
   }
 }
