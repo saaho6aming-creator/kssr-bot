@@ -1,50 +1,54 @@
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
 const express = require('express');
-const fs = require('fs');
 const app = express();
-let pairingCode = '';
+let pairingCode = 'STARTING... PLEASE WAIT 15 SEC';
 let isOnline = false;
-let sock;
-let pairingTried = false;
+let sock = null;
+let pairingDone = false;
 
 async function startBot() {
+  if (sock) return; // STOP double socket - this was the bug
+  console.log('Starting bot...');
   const { state, saveCreds } = await useMultiFileAuthState('auth');
   const { version } = await fetchLatestBaileysVersion();
-  sock = makeWASocket({ version, auth: state, printQRInTerminal: false, browser: ['KSSR BOT','Chrome','1.0'], syncFullHistory: false });
+  sock = makeWASocket({ version, auth: state, printQRInTerminal: false, browser: ['KSSR BOT','Chrome','1.0'] });
   sock.ev.on('creds.update', saveCreds);
 
   sock.ev.on('connection.update', async (u) => {
     const { connection, lastDisconnect } = u;
+    if (!connection) return; // ignore undefined - this was spamming logs
+
     console.log('Connection:', connection);
 
-    // Ask for pairing code AFTER socket connects to WhatsApp server
-    if (connection === 'connecting' && !sock.authState.creds.registered && !pairingTried) {
-      pairingTried = true;
+    if (connection === 'connecting' && !sock.authState.creds.registered && !pairingDone) {
+      pairingDone = true;
+      console.log('Waiting 8 sec for WhatsApp server...');
       setTimeout(async () => {
         try {
           pairingCode = await sock.requestPairingCode('9779748710002');
-          console.log('PAIRING CODE: ' + pairingCode);
-        } catch(e){ 
-          console.log('Pairing failed, retrying...');
-          pairingTried = false;
-          setTimeout(() => startBot(), 5000);
-        }
-      }, 5000);
+          console.log('=== PAIRING CODE: ' + pairingCode + ' ===');
+          console.log('ENTER THIS IN PHONE WITHIN 40 SEC');
+        } catch(e){ console.log('Pairing failed, will retry on restart'); pairingDone = false; }
+      }, 8000);
     }
 
-    if (connection === 'open') { isOnline = true; pairingCode = ''; pairingTried = false; console.log('BOT IS ONLINE ✅'); }
+    if (connection === 'open') {
+      isOnline = true;
+      pairingCode = 'CONNECTED';
+      console.log('BOT IS ONLINE ✅✅✅');
+    }
 
     if (connection === 'close') {
       const code = lastDisconnect?.error?.output?.statusCode;
-      console.log('Disconnected code:', code);
-      if (code === DisconnectReason.loggedOut || code === 428) {
-        console.log('Deleting dead auth, restarting fresh...');
+      console.log('Closed code:', code);
+      sock = null;
+      pairingDone = false;
+      if (code === DisconnectReason.loggedOut) {
+        const fs = require('fs');
         try { fs.rmSync('auth', { recursive: true, force: true }); } catch(e){}
-        pairingTried = false; pairingCode = '';
-        setTimeout(() => startBot(), 3000);
-      } else {
-        setTimeout(() => startBot(), 3000);
       }
+      // Wait 10 sec before ONE restart - no loop
+      setTimeout(() => { if (!isOnline) startBot(); }, 10000);
     }
   });
 
@@ -52,14 +56,12 @@ async function startBot() {
     const m = messages[0];
     if (!m.message || m.key.fromMe) return;
     const text = m.message.conversation || m.message.extendedTextMessage?.text || '';
-    if (text.trim() === '!ping') {
-      await sock.sendMessage(m.key.remoteJid, { text: '🏓 Pong! Bot is ONLINE ✅' });
-    }
+    if (text.trim() === '!ping') await sock.sendMessage(m.key.remoteJid, { text: '🏓 Pong! Bot is ONLINE ✅' });
   });
 }
 startBot();
 
 app.get('/', (req,res) => {
-  res.send(`<h1>KSSR BOT</h1><h2>${isOnline ? 'ONLINE ✅' : 'Pairing Code: ' + pairingCode}</h2><p>Refresh page for code</p>`);
+  res.send(`<h1>KSSR BOT</h1><h2 style="font-size:50px">${isOnline ? 'ONLINE ✅' : 'CODE: ' + pairingCode}</h2><p>Do NOT refresh too much. Code lives 40 sec.</p>`);
 });
-app.listen(10000, () => console.log('Web on 10000'));
+app.listen(10000);
