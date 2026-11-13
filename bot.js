@@ -1,57 +1,34 @@
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
 const express = require('express');
+const QRCode = require('qrcode');
 const app = express();
-let pairingCode = 'STARTING... PLEASE WAIT 15 SEC';
+let qrImage = '';
 let isOnline = false;
 let sock = null;
-let pairingDone = false;
 
 async function startBot() {
-  if (sock) return; // STOP double socket - this was the bug
-  console.log('Starting bot...');
+  if (sock) return;
   const { state, saveCreds } = await useMultiFileAuthState('auth');
   const { version } = await fetchLatestBaileysVersion();
   sock = makeWASocket({ version, auth: state, printQRInTerminal: false, browser: ['KSSR BOT','Chrome','1.0'] });
   sock.ev.on('creds.update', saveCreds);
-
   sock.ev.on('connection.update', async (u) => {
-    const { connection, lastDisconnect } = u;
-    if (!connection) return; // ignore undefined - this was spamming logs
-
-    console.log('Connection:', connection);
-
-    if (connection === 'connecting' && !sock.authState.creds.registered && !pairingDone) {
-      pairingDone = true;
-      console.log('Waiting 8 sec for WhatsApp server...');
-      setTimeout(async () => {
-        try {
-          pairingCode = await sock.requestPairingCode('9779748710002');
-          console.log('=== PAIRING CODE: ' + pairingCode + ' ===');
-          console.log('ENTER THIS IN PHONE WITHIN 40 SEC');
-        } catch(e){ console.log('Pairing failed, will retry on restart'); pairingDone = false; }
-      }, 8000);
+    const { connection, lastDisconnect, qr } = u;
+    if (qr) {
+      qrImage = await QRCode.toDataURL(qr);
+      console.log('NEW QR READY');
     }
-
-    if (connection === 'open') {
-      isOnline = true;
-      pairingCode = 'CONNECTED';
-      console.log('BOT IS ONLINE ✅✅✅');
-    }
-
+    if (connection === 'open') { isOnline = true; qrImage = ''; console.log('BOT IS ONLINE ✅'); }
     if (connection === 'close') {
       const code = lastDisconnect?.error?.output?.statusCode;
-      console.log('Closed code:', code);
       sock = null;
-      pairingDone = false;
       if (code === DisconnectReason.loggedOut) {
         const fs = require('fs');
         try { fs.rmSync('auth', { recursive: true, force: true }); } catch(e){}
       }
-      // Wait 10 sec before ONE restart - no loop
-      setTimeout(() => { if (!isOnline) startBot(); }, 10000);
+      setTimeout(() => { if (!isOnline) startBot(); }, 5000);
     }
   });
-
   sock.ev.on('messages.upsert', async ({ messages }) => {
     const m = messages[0];
     if (!m.message || m.key.fromMe) return;
@@ -62,6 +39,8 @@ async function startBot() {
 startBot();
 
 app.get('/', (req,res) => {
-  res.send(`<h1>KSSR BOT</h1><h2 style="font-size:50px">${isOnline ? 'ONLINE ✅' : 'CODE: ' + pairingCode}</h2><p>Do NOT refresh too much. Code lives 40 sec.</p>`);
+  if (isOnline) return res.send('<h1>BOT IS ONLINE ✅</h1>');
+  if (!qrImage) return res.send('<h1>Starting... Refresh in 10 sec</h1>');
+  res.send(`<h1>Scan with 9748710002</h1><img src="${qrImage}" style="width:300px"><p>Refresh if QR expires</p>`);
 });
 app.listen(10000);
