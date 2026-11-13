@@ -10,9 +10,8 @@ async function startBot() {
   sock = makeWASocket({ auth: state, printQRInTerminal: false, browser: ['KSSR BOT','Chrome','1.0'] });
   sock.ev.on('creds.update', saveCreds);
 
-  // If not logged in, ask for pairing code
   if (!sock.authState.creds.registered) {
-    const number = '9779748710002'; // <-- PUT BOT NUMBER HERE without + , example 9779800000000
+    const number = '9779748710002';
     setTimeout(async () => {
       try {
         pairingCode = await sock.requestPairingCode(number);
@@ -28,7 +27,6 @@ async function startBot() {
       const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
       console.log('Disconnected, reconnect:', shouldReconnect);
       if (shouldReconnect) startBot();
-      else { console.log('LOGGED OUT - delete auth folder'); }
     }
   });
 
