@@ -1,9 +1,9 @@
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/【entity-baileys¦canonical_name=Baileys】');
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
 const fs = require('fs');
 const pino = require('pino');
 
 let sock = null;
-let users = {}; // number -> { name, team, waitingTeam }
+let users = {};
 
 const TROPHY_LINK = 'https://kssrcuptrophy.netlify.app/?board=main';
 const POINTS_LINK = 'https://kssrleaguestanding.netlify.app';
@@ -39,164 +39,39 @@ async function startBot() {
     const text = rawText.trim();
     const lower = text.toLowerCase();
 
-    // ===== TEAM NAME REPLY AFTER REGISTER =====
     if (users[from] && users[from].waitingTeam && !lower.startsWith('!')) {
       users[from].team = text;
       users[from].waitingTeam = false;
-      await sock.sendMessage(from, { text:
-`✅ TEAM NAME SAVED! ✅
-
-Hello ${users[from].name} 👋
-Your Team: *${text}*
-
-Your team name will be used directly for Table / Fixtures.
-
-🏆 Trophy Board:
-${TROPHY_LINK}
-
-📊 Points Table:
-${POINTS_LINK}
-
-Stay Active! ⚽` });
+      await sock.sendMessage(from, { text: `✅ TEAM NAME SAVED! ✅\n\nHello ${users[from].name} 👋\nYour Team: *${text}*\n\nYour team name will be used directly for Table / Fixtures.\n\n🏆 Trophy Board:\n${TROPHY_LINK}\n\n📊 Points Table:\n${POINTS_LINK}\n\nStay Active! ⚽` });
       return;
     }
 
     if (text === '!ping') await sock.sendMessage(from, { text: '🏓 Pong! KSSR Bot is Online!' });
 
-    // !help
     if (text === '!help') {
-      await sock.sendMessage(from, { text:
-`🏆 KSSR CUP BOT 🏆
-
-!help - Show menu
-!rules - Rules & Notice
-!trophy - Trophy Info
-!warning - Warning Rules
-!fixtures - Fixtures
-!points - Points Table
-!register YourName - Register for Next Season` });
+      await sock.sendMessage(from, { text: `🏆 KSSR CUP BOT 🏆\n\n!help - Show menu\n!rules - Rules & Notice\n!trophy - Trophy Info\n!warning - Warning Rules\n!fixtures - Fixtures\n!points - Points Table\n!register YourName - Register for Next Season` });
     }
 
-    // !trophy
     if (text === '!trophy') {
-      await sock.sendMessage(from, { text:
-`🏆 KSSR CUP - TROPHY INFO 🏆
-
-🥇 Winner: Champion Trophy + Cash Prize
-🥈 Runner Up: Trophy + Cash Prize
-⭐ Best Player
-⚽ Top Scorer
-🧤 Best Goalkeeper
-
-👉 Live Trophy Board:
-${TROPHY_LINK}
-
-Type !register to join Next Season!` });
+      await sock.sendMessage(from, { text: `🏆 KSSR CUP - TROPHY INFO 🏆\n\n🥇 Winner: Champion Trophy + Cash Prize\n🥈 Runner Up: Trophy + Cash Prize\n⭐ Best Player\n⚽ Top Scorer\n🧤 Best Goalkeeper\n\n👉 Live Trophy Board:\n${TROPHY_LINK}\n\nType !register to join Next Season!` });
     }
 
-    // !warning - FIXED
     if (text === '!warning') {
-      await sock.sendMessage(from, { text:
-`⚠️ KSSR CUP - WARNING RULES ⚠️
-
-🚨 QUIT / BACK OUT WARNING:
-
-- 1 Game Back = 2 POINTS DEDUCTED
-- 2 Or More Games Back = SUSPENDED NEXT SEASON
-
-- No Show Without Info = 3 POINTS DEDUCTED
-
-Play Fair! Don't Back Out! ⚽
-KSSR CUP` });
+      await sock.sendMessage(from, { text: `⚠️ KSSR CUP - WARNING RULES ⚠️\n\n🚨 QUIT / BACK OUT WARNING:\n\n- 1 Game Back = 2 POINTS DEDUCTED\n- 2 Or More Games Back = SUSPENDED NEXT SEASON\n\n- No Show Without Info = 3 POINTS DEDUCTED\n\nPlay Fair! Don't Back Out! ⚽\nKSSR CUP` });
     }
 
-    // !rules - NEW
     if (text === '!rules') {
-      await sock.sendMessage(from, { text:
-`🏆 KSSR CUP - IMPORTANT RULES & NOTICE 🏆
-Please Read Carefully
-
-1️⃣ NO SHOW
-If a player does not come to play,
-3 POINTS will be deducted. (Inform 24 hrs before)
-
-2️⃣ EMERGENCY
-If you have an emergency, please inform us in the group.
-
-3️⃣ QUIT / BACK OUT
-- If a player backs out 1 game, his 2 POINTS will be deducted.
-- If a player backs out 2 or more games, he will be SUSPENDED in next season.
-
-4️⃣ TEAM & LOGO
-All players should use unique club logo and don't use Nepali flag. The team name and club logo will be similar.
-
-5️⃣ GAME DURATION
-The game duration should be 13 MINUTES.
-
-6️⃣ PLAYER CONDITION
-Player condition should be NORMAL.
-
-7️⃣ DON'T USE SMART ASSIST
-Don't use Smart Assist in the game.
-
-STAY ACTIVE • PLAY FAIR • RESPECT THE GAME
-KSSR CUP ⚽` });
+      await sock.sendMessage(from, { text: `🏆 KSSR CUP - IMPORTANT RULES & NOTICE 🏆\nPlease Read Carefully\n\n1️⃣ NO SHOW\nIf a player does not come to play,\n3 POINTS will be deducted. (Inform 24 hrs before)\n\n2️⃣ EMERGENCY\nIf you have an emergency, please inform us in the group.\n\n3️⃣ QUIT / BACK OUT\n- If a player backs out 1 game, his 2 POINTS will be deducted.\n- If a player backs out 2 or more games, he will be SUSPENDED in next season.\n\n4️⃣ TEAM & LOGO\nAll players should use unique club logo and don't use Nepali flag. The team name and club logo will be similar.\n\n5️⃣ GAME DURATION\nThe game duration should be 13 MINUTES.\n\n6️⃣ PLAYER CONDITION\nPlayer condition should be NORMAL.\n\n7️⃣ DON'T USE SMART ASSIST\nDon't use Smart Assist in the game.\n\nSTAY ACTIVE • PLAY FAIR • RESPECT THE GAME\nKSSR CUP ⚽` });
     }
 
-    // !fixtures - FIXED
     if (text === '!fixtures') {
-      await sock.sendMessage(from, { text:
-`⚽ KSSR CUP FIXTURES - SEASON 9 ⚽
-6 Teams • 8 Matchdays • 15 Matches
-
-Nov 17: Lumbini Lions vs Easy Game ⭐ SEASON OPENER
-
-Nov 18:
-Lumbini Lions vs Panda FC
-Dream Star City vs Easy Game
-
-Nov 19:
-Blue FC vs Dil Ka Deewana
-Lumbini Lions vs Dream Star City
-
-Nov 20:
-Easy Game vs Blue FC
-Panda FC vs Dil Ka Deewana
-
-Nov 21:
-Lumbini Lions vs Dil Ka Deewana
-Dream Star City vs Blue FC
-
-Nov 22:
-Panda FC vs Dream Star City
-Easy Game vs Dil Ka Deewana
-
-Nov 23:
-Lumbini Lions vs Blue FC
-Easy Game vs Panda FC
-
-Nov 24:
-Dil Ka Deewana vs Dream Star City
-Blue FC vs Panda FC
-
-Check !points for Table 🏆` });
+      await sock.sendMessage(from, { text: `⚽ KSSR CUP FIXTURES - SEASON 9 ⚽\n6 Teams • 8 Matchdays • 15 Matches\n\nNov 17: Lumbini Lions vs Easy Game ⭐ SEASON OPENER\n\nNov 18:\nLumbini Lions vs Panda FC\nDream Star City vs Easy Game\n\nNov 19:\nBlue FC vs Dil Ka Deewana\nLumbini Lions vs Dream Star City\n\nNov 20:\nEasy Game vs Blue FC\nPanda FC vs Dil Ka Deewana\n\nNov 21:\nLumbini Lions vs Dil Ka Deewana\nDream Star City vs Blue FC\n\nNov 22:\nPanda FC vs Dream Star City\nEasy Game vs Dil Ka Deewana\n\nNov 23:\nLumbini Lions vs Blue FC\nEasy Game vs Panda FC\n\nNov 24:\nDil Ka Deewana vs Dream Star City\nBlue FC vs Panda FC\n\nCheck !points for Table 🏆` });
     }
 
-    // !points - FIXED
     if (text === '!points') {
-      await sock.sendMessage(from, { text:
-`🏆 KSSR CUP - POINTS TABLE 🏆
-
-📊 Live Points Table:
-${POINTS_LINK}
-
-🏆 Live Trophy Board:
-${TROPHY_LINK}
-
-Type !fixtures for Next Match!` });
+      await sock.sendMessage(from, { text: `🏆 KSSR CUP - POINTS TABLE 🏆\n\n📊 Live Points Table:\n${POINTS_LINK}\n\n🏆 Live Trophy Board:\n${TROPHY_LINK}\n\nType !fixtures for Next Match!` });
     }
 
-    // !register - FIXED
     if (lower.startsWith('!register')) {
       let regName = text.replace(/!register/i, '').trim();
       if (!regName) {
@@ -204,22 +79,9 @@ Type !fixtures for Next Match!` });
         return;
       }
       users[from] = { name: regName, team: '', waitingTeam: true };
-      await sock.sendMessage(from, { text:
-`✅ REGISTRATION DONE! ✅
-
-Hello ${regName} 👋
-You are registered for KSSR CUP NEXT SEASON!
-
-📩 Now send your Team Name
-Your registered name will be used directly for Table / Fixtures.
-
-🏆 Trophy Board:
-${TROPHY_LINK}
-
-Stay Active! ⚽` });
+      await sock.sendMessage(from, { text: `✅ REGISTRATION DONE! ✅\n\nHello ${regName} 👋\nYou are registered for KSSR CUP NEXT SEASON!\n\n📩 Now send your Team Name\nYour registered name will be used directly for Table / Fixtures.\n\n🏆 Trophy Board:\n${TROPHY_LINK}\n\nStay Active! ⚽` });
     }
 
-    // !myteam
     if (text === '!myteam') {
       if (users[from] && users[from].team) {
         await sock.sendMessage(from, { text: `Your Team: *${users[from].team}*\nRegistered as: ${users[from].name}` });
