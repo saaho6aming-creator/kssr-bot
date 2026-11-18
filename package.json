@@ -4,9 +4,7 @@
   "main": "bot.js",
   "scripts": { "start": "node bot.js" },
   "dependencies": {
-    "@whiskeysockets/baileys": "latest",
-    "express": "latest",
-    "pino": "latest",
-    "qrcode": "latest"
+    "@whiskeysockets/baileys": "^6.7.0",
+    "pino": "^9.0.0"
   }
 }
