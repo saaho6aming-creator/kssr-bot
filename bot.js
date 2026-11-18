@@ -13,7 +13,13 @@ async function startBot() {
   sock = makeWASocket({ auth: state, logger: pino({ level: 'silent' }), printQRInTerminal: false, browser: ['KSSR BOT', 'Chrome', '1.0'] });
   sock.ev.on('creds.update', saveCreds);
   sock.ev.on('connection.update', async (update) => {
-    const { connection, lastDisconnect } = update;
+    const { connection, lastDisconnect, qr } = update;
+    if (qr) {
+      console.log('====================================');
+      console.log('SCAN THIS QR LINK - OPEN IN BROWSER:');
+      console.log('https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(qr));
+      console.log('====================================');
+    }
     if (connection === 'close') {
       const code = lastDisconnect?.error?.output?.statusCode;
       sock = null;
@@ -27,10 +33,10 @@ async function startBot() {
       try {
         const code = await sock.requestPairingCode(BOT_NUMBER);
         console.log('====================================');
-        console.log('YOUR PAIRING CODE IS: ' + code);
+        console.log('YOUR PAIRING CODE IS: ' + code + ' - ENTER IN 20 SECONDS!');
         console.log('====================================');
       } catch (e) { console.log('Pairing error:', e.message); }
-    }, 5000);
+    }, 8000);
   }
   sock.ev.on('messages.upsert', async ({ messages }) => {
     const m = messages[0];
